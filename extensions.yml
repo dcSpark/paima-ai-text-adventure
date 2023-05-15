@@ -1,0 +1,6 @@
+extensions:
+  - name: "OracleNFT"
+    type: erc721
+    contractAddress: "0x7505bB649C0fdBd908Fa577EbB93514B6bceFEcF"
+    startBlockHeight: 13747348
+    initializationPrefix: nftmint
