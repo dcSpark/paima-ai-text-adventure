@@ -6,7 +6,7 @@
     "preInit": "(cd .. && ./paima-engine init sdk)",
     "initialize": "git init ../paima-sdk && npm --prefix ../paima-sdk install && npm ci && cp .env.example ../.env.development && rm -rf ../paima-sdk/.git",
     "postInit": "cp extensions.yml ../extensions.yml",
-    "init": "npm run preInit && npm run initialize && npm run postInit" ,
+    "init": "npm run preInit && npm run initialize && npm run postInit",
     "pack": "sh scripts/pack.sh",
     "pack:middleware": "npm run build -w middleware/",
     "build": "npx tsc --build tsconfig.build.json",

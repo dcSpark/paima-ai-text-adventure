@@ -1,6 +1,23 @@
 import { createTheme } from '@mui/material';
 
+declare module '@mui/material/styles' {
+  interface BreakpointOverrides {
+    xs: false;
+    sm: true;
+    md: true;
+    lg: true;
+    xl: false;
+  }
+}
+
 export const theme = createTheme({
+  breakpoints: {
+    values: {
+      sm: 480, // 360p
+      md: 640, // 480p
+      lg: 1280, // 720p
+    },
+  },
   palette: {
     primary: {
       main: '#f29dff',
@@ -17,6 +34,11 @@ export const theme = createTheme({
       color: '#f9ceff',
       fontWeight: 800,
     },
+    caption: {
+      fontWeight: 600,
+      fontSize: '1rem',
+      lineHeight: '1.5em',
+    },
     button: {
       fontStyle: 'normal',
       fontWeight: 700,
@@ -26,6 +48,13 @@ export const theme = createTheme({
     },
   },
   components: {
+    MuiTypography: {
+      defaultProps: {
+        variantMapping: {
+          caption: 'p',
+        },
+      },
+    },
     MuiTableCell: {
       styleOverrides: {
         head: {

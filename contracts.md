@@ -7,7 +7,7 @@ Follow the paima engine docs and deploy default contracts. You should get 4 cont
  - native nft sale proxy
 
 Update your .env file:
- - CONTRACT_ADDRESS, START_BLOCKHEIGHT (l2 deploy), NATIVE_NFT_SALE_PROXY (addr), NFT (addr), NFT_SUPPLY
+ - CONTRACT_ADDRESS, START_BLOCKHEIGHT (l2 deploy), NATIVE_NFT_SALE_PROXY (addr), NFT (addr)
 
 Update your extensions.yml (in parent folder, it gets copied there from repo folder during init):
  - contractAddress (nft), startBlockHeight (nft deploy)

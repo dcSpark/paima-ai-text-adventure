@@ -1,11 +1,9 @@
 import type { Signer } from '@ethersproject/abstract-signer';
-import type { Contract } from 'ethers';
 import { BigNumber as EthersBigNumber, providers } from 'ethers';
 
-import { NATIVE_NFT_SALE_PROXY, RPC_URL } from './constants';
-import type { Characters } from './utils';
+import { NATIVE_NFT_SALE_PROXY, NFT, RPC_URL } from './constants';
 import { characterToNumberMap } from './utils';
-import { NativeNftSale__factory } from '@src/typechain';
+import { NativeNftSale__factory, Nft__factory } from '@src/typechain';
 import BigNumber from 'bignumber.js';
 
 declare let window: any;
@@ -28,9 +26,12 @@ export const getSignerOrProvider = (account?: string): SignerProvider => {
   return signerOrProvider;
 };
 
-export const NativeNftSaleProxyContract = (
-  signer: SignerProvider = getSignerOrProvider()
-): Contract => {
+/** Note: the signer arg is available, but you probably never want to use it for this one. */
+export const NftContract = (signer: SignerProvider = getSignerOrProvider()) => {
+  return Nft__factory.connect(NFT, signer);
+};
+
+export const NativeNftSaleProxyContract = (signer: SignerProvider = getSignerOrProvider()) => {
   return NativeNftSale__factory.connect(NATIVE_NFT_SALE_PROXY, signer);
 };
 
@@ -40,7 +41,24 @@ export async function fetchNftPrice(): Promise<BigNumber> {
   return new BigNumber(result.toString());
 }
 
-export const buyNft = async (account: string, character: Characters) => {
+export async function fetchCurrentNftTokenId(): Promise<number> {
+  const contract = NftContract();
+  const result: EthersBigNumber = await contract.currentTokenId();
+  return result.toNumber();
+}
+
+/**
+ * Amount that was and/or can be minted.
+ * Not to be confused with amount already minted, that is "totalSupply".
+ * Not to be confused with amount remaining to be minted, there is no name for that.
+ */
+export async function fetchNftMaxSupply(): Promise<number> {
+  const contract = NftContract();
+  const result: EthersBigNumber = await contract.maxSupply();
+  return result.toNumber();
+}
+
+export const buyNft = async (account: string) => {
   const signer = getSignerOrProvider(account);
   const nativeNftSaleProxyContract = NativeNftSaleProxyContract(signer);
   const tokenPrice = await nativeNftSaleProxyContract.nftPrice();
@@ -48,7 +66,9 @@ export const buyNft = async (account: string, character: Characters) => {
   const provider = getSignerOrProvider();
   const gasPrice = await provider.getGasPrice();
 
-  const characterNumber = characterToNumberMap[character];
+  // TODO: not sure if we want to use the NFT characters
+  const characterNumber = characterToNumberMap['fire'];
+
   const tx = await nativeNftSaleProxyContract.buyNft(account, characterNumber, {
     gasPrice,
     gasLimit: 800000,

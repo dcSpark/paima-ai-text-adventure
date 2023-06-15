@@ -15,13 +15,18 @@ import { Join } from './pages/Join';
 import { WagmiConfig } from 'wagmi';
 import { client } from './hooks/web3-data-provider/wagmi';
 import NFTSale from './pages/NFTSale';
+import DisconnectModal from './components/DisconnectModal';
+import WrongChainModal from './components/WrongChainModal';
+import PreCasher from './components/PreCasher';
+import { NoNft } from './pages/NoNft';
+import { ROUTES } from './routes';
 
 export default function App() {
   const navigate = useNavigate();
   const currentUser = useSelector((state: RootState) => state.app.userWallet);
   React.useEffect(() => {
     if (!currentUser) {
-      navigate('/');
+      navigate(ROUTES.ROOT);
     }
   }, [currentUser, navigate]);
 
@@ -50,15 +55,19 @@ export default function App() {
               color: 'white',
             }}
           >
+            <PreCasher />
+            <DisconnectModal />
+            <WrongChainModal />
             <Typography variant="h4" component="h1" gutterBottom>
               Oracle RPG
             </Typography>
 
             <Routes>
-              <Route element={<Login />} path="/" />
-              <Route element={<Join />} path="/join" />
-              <Route element={<Lobby />} path="/lobby/:lobbyId" />
-              <Route element={<NFTSale />} path="/buy" />
+              <Route element={<Login />} path={ROUTES.ROOT} />
+              <Route element={<Join />} path={ROUTES.JOIN} />
+              <Route element={<NoNft />} path={ROUTES.NO_NFT} />
+              <Route element={<Lobby />} path={ROUTES.LOBBY} />
+              <Route element={<NFTSale />} path={ROUTES.BUY} />
             </Routes>
           </Box>
         </Container>

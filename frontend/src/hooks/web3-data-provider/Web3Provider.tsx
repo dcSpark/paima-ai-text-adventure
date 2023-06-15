@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   useAccount,
   useConnect,
@@ -12,44 +12,54 @@ import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { Web3Context } from '../useWeb3Context';
 import { supportedChain } from './wagmi';
 import type { Provider } from '@wagmi/core';
+import { useSelector } from 'react-redux';
+import { RootState } from '@src/redux/store';
 
 export type Web3Data = {
-  connectWallet: () => void;
   switchChain: ((chainId?: number) => void) | undefined;
-  disconnectWallet: () => void;
   currentAccount: string;
   connected: boolean;
   loading: boolean;
   provider: Provider;
-  chainId: number;
-  network: string;
+  chainId: undefined | number;
+  networkName: string;
   error: Error | null;
 };
 
 export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ children }) => {
-  const { connect: connectWallet, error } = useConnect({
+  const { connect, error } = useConnect({
     connector: new MetaMaskConnector(),
     chainId: supportedChain.id,
   });
+  const { disconnect } = useDisconnect();
+  const { isConnected, isConnecting, address: account } = useAccount();
+  const middlewareConnected = useSelector((state: RootState) => state.app.connected);
+
+  useEffect(() => {
+    // (dis)connect wagmi based on connection using middleware
+    if (middlewareConnected && !isConnected && !isConnecting) {
+      connect();
+    }
+
+    if (!middlewareConnected && isConnected) {
+      disconnect();
+    }
+  }, [connect, disconnect, isConnected, isConnecting, middlewareConnected]);
 
   const { switchNetwork } = useSwitchNetwork();
   const { chain } = useNetwork();
-  const { disconnect } = useDisconnect();
-  const { isConnected, isConnecting, address: account } = useAccount();
   const provider = useProvider();
 
   return (
     <Web3Context.Provider
       value={{
         web3ProviderData: {
-          connectWallet,
-          disconnectWallet: disconnect,
           switchChain: switchNetwork,
           provider,
           connected: isConnected,
           loading: isConnecting,
-          chainId: chain?.id || 2001,
-          network: chain?.id === 2001 ? 'mainnet' : 'testnet',
+          chainId: chain?.id,
+          networkName: chain?.name ?? 'Unknown network',
           currentAccount: account?.toLowerCase() || '',
           error,
         },

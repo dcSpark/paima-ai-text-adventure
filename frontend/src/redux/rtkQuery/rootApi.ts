@@ -1,5 +1,7 @@
+import { lobbyApi } from './lobbyApi';
 import { nftApi } from './nftApi';
 
 export const rtkApi = {
-  nftApi,
+  nft: nftApi,
+  lobby: lobbyApi,
 };

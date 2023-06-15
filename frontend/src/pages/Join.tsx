@@ -10,122 +10,137 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { RootState, setSelectedNFT } from '@src/redux/store';
-import React, { useCallback, useState } from 'react';
+import { RootState, setJoinedLobby, setSelectedNft } from '@src/redux/store';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import mw from '@game/middleware';
-import { SelectChangeEvent } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { skipToken } from '@reduxjs/toolkit/dist/query';
 import { rtkApi } from '@src/redux/rtkQuery/rootApi';
+import { ROUTES } from '@src/routes';
+
+const lobbyToJoin = '1'; // TODO magic constant
 
 export function Join() {
-  // const userNFTs = useSelector((state: RootState) => state.app.userNFTs);
-  const selectedNFTID = useSelector((state: RootState) => state.app.selectedNFT);
-  const userWallet = useSelector((state: RootState) => state.app.userWallet);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  if (!userWallet) {
-    navigate('/');
-  }
+  const selectedNftId = useSelector((state: RootState) => state.app.selectedNft);
+  const userWallet = useSelector((state: RootState) => state.app.userWallet);
   const [showDescriptionPrompt, setShowDescriptionPrompt] = useState(false);
   const [descriptionInput, setDescriptionInput] = useState('');
-  const userNFTs = rtkApi.nftApi.endpoints.getNFTsForWallet.useQuery(
+  const { data: userNFTs } = rtkApi.nft.endpoints.getNFTsForWallet.useQuery(
     userWallet ? userWallet.walletAddress : skipToken,
-    { pollingInterval: 6000 }
+    { pollingInterval: 5_000 }
   );
 
-  const dispatch = useDispatch();
+  useEffect(() => {
+    // assert: an nft is selected after load
+    if (userNFTs == null) return;
 
-  const handleNFTChange = (event: SelectChangeEvent<string>) => {
-    dispatch(setSelectedNFT(event.target.value));
-  };
+    if (selectedNftId == null && userNFTs.length > 0) {
+      dispatch(setSelectedNft(userNFTs[0].nft_id));
+    }
+  });
 
-  const handleJoinClick = useCallback(() => {
-    const selectedNFT = userNFTs.data.find(nft => nft.nft_id === selectedNFTID);
+  useEffect(() => {
+    // assert: user owns nft after load
+    if (userNFTs == null) return;
+
+    if (userNFTs.length === 0) {
+      navigate(ROUTES.NO_NFT);
+    }
+  });
+
+  const handleJoin = useCallback(async () => {
+    if (userNFTs == null) return;
+
+    const selectedNFT = userNFTs.find(nft => nft.nft_id === selectedNftId);
+    if (selectedNFT == null) return;
+
+    if (selectedNFT.lobby_id != null && selectedNFT.nft_description.length > 0) {
+      // go to previously joined lobby
+      dispatch(setJoinedLobby(selectedNFT.lobby_id));
+      navigate(ROUTES.LOBBY);
+      return;
+    }
+
     if (!selectedNFT.nft_description || selectedNFT.nft_description.length === 0) {
       // prompt for initial description
       setShowDescriptionPrompt(true);
-    } else if (selectedNFT.lobby_id === '1' && selectedNFT.nft_description.length > 0) {
-      // route to lobby
-      navigate('/lobby/1');
-    } else {
-      mw.joinNftToLobby('1', selectedNFTID, '').then(joinResult => {
-        if (joinResult.success) {
-          // then route to lobby
-          navigate('/lobby/1');
-        }
-      });
-      // then route to lobby
+      return;
     }
-  }, [navigate, selectedNFTID, userNFTs]);
 
-  const handleDescriptionInputSubmit = useCallback(() => {
-    // setDescriptionInput(event.target.value);
-    // const userDescription = event.target.value;
-    // TODO: dispatch join lobby action with description added here
-    mw.joinNftToLobby('1', selectedNFTID, descriptionInput).then(joinResult => {
-      if (joinResult.success) {
-        // then route to lobby
-        navigate('/lobby/1');
-      }
-    });
-  }, [descriptionInput, navigate, selectedNFTID]);
+    // TODO: can this happen? seems like this is done through the description modal
+    // join lobby
+    const joinResult = await mw.joinNftToLobby(lobbyToJoin, selectedNftId, descriptionInput);
+    if (joinResult.success) {
+      dispatch(setJoinedLobby(lobbyToJoin));
+      navigate(ROUTES.LOBBY);
+    }
+  }, [descriptionInput, dispatch, navigate, selectedNftId, userNFTs]);
 
-  const handleDescriptionInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDescriptionInput(event.target.value);
-  };
+  const handleSubmitDescription = useCallback(async () => {
+    const joinResult = await mw.joinNftToLobby(lobbyToJoin, selectedNftId, descriptionInput);
+    if (joinResult.success) {
+      dispatch(setJoinedLobby(lobbyToJoin));
+      navigate(ROUTES.LOBBY);
+    }
+  }, [descriptionInput, dispatch, navigate, selectedNftId]);
 
-  const handleDescriptionPromptClose = () => {
-    setShowDescriptionPrompt(false);
-  };
-
-  const userHasNFTs = !userNFTs.isLoading && !userNFTs.error && userNFTs.data?.length > 0;
+  if (userNFTs == null || userNFTs.length === 0) return <Box />;
 
   return (
     <Box>
-      {userHasNFTs ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography>Select the NFT you would like to join the game with</Typography>
-
-          <Select sx={{ width: '200px' }} value={selectedNFTID} onChange={handleNFTChange}>
-            {userNFTs?.data?.map(nft => (
-              <MenuItem key={`${nft.contract_address}-${nft.nft_id}`} value={nft.nft_id}>
-                {nft.nft_id}
-              </MenuItem>
-            ))}
-          </Select>
-
-          <Button sx={{ mt: 2 }} variant="contained" onClick={handleJoinClick}>
-            Join
-          </Button>
-          <Button onClick={() => navigate('/buy')}>Buy</Button>
-
-          <Dialog onClose={handleDescriptionPromptClose} open={showDescriptionPrompt}>
-            <DialogTitle>Enter your initial Character Description</DialogTitle>
-            <DialogContent>
-              {/* onChange={handleDescriptionInputChange} */}
-              <Input type="text" value={descriptionInput} onChange={handleDescriptionInputChange} />
-            </DialogContent>
-            <DialogActions>
-              <Button variant="text" onClick={handleDescriptionPromptClose}>
-                Cancel
-              </Button>
-              <Button variant="contained" onClick={handleDescriptionInputSubmit}>
-                OK
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography variant="h5">
-            You don't have any Oracle NFTs yet. Go buy one to play!
-          </Typography>
-          <Button variant="contained" onClick={() => navigate('/buy')}>
-            Buy My Character!
-          </Button>
-        </Box>
-      )}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Typography>Select an NFT to join the game with</Typography>
+        <Select
+          sx={{ width: '200px' }}
+          value={selectedNftId ?? ''}
+          onChange={event => {
+            dispatch(setSelectedNft(event.target.value));
+          }}
+        >
+          {userNFTs.map(nft => (
+            <MenuItem key={`${nft.contract_address}-${nft.nft_id}`} value={nft.nft_id}>
+              {nft.nft_id}
+            </MenuItem>
+          ))}
+        </Select>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={handleJoin}>
+          Join
+        </Button>
+        <Button onClick={() => navigate(ROUTES.BUY)}>Buy</Button>
+        <Dialog
+          onClose={() => {
+            setShowDescriptionPrompt(false);
+          }}
+          open={showDescriptionPrompt}
+        >
+          <DialogTitle>Enter your initial Character Description</DialogTitle>
+          <DialogContent>
+            <Input
+              type="text"
+              value={descriptionInput}
+              onChange={event => {
+                setDescriptionInput(event.target.value);
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="text"
+              onClick={() => {
+                setShowDescriptionPrompt(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSubmitDescription}>
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </Box>
   );
 }

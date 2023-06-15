@@ -17,16 +17,17 @@ const root = ReactDOM.createRoot(rootElement!);
 
 root.render(
   <ThemeProvider theme={theme}>
-    <WagmiConfig client={client}>
-      <Web3ContextProvider>
-        <Provider store={store}>
-          {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-          <CssBaseline />
-          <HashRouter>
-            <App />
-          </HashRouter>
-        </Provider>
-      </Web3ContextProvider>
-    </WagmiConfig>
+    <Provider store={store}>
+      <WagmiConfig client={client}>
+        <Web3ContextProvider>
+          <>
+            <CssBaseline />
+            <HashRouter>
+              <App />
+            </HashRouter>
+          </>
+        </Web3ContextProvider>
+      </WagmiConfig>
+    </Provider>
   </ThemeProvider>
 );
