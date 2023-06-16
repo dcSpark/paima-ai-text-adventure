@@ -11,4 +11,3 @@ export const CDE_CONTRACT_MAPPING: Record<string, string> = {
 };
 
 export * from './types.js';
-export * from './methods.js';
