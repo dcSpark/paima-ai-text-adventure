@@ -13,23 +13,26 @@ import {
   addMatchMove,
   joinNftToLobby,
   addOracleMove,
-  getNftsForLobby,
   updateNftState,
   getNftState,
 } from '@game/db';
-import type { ScheduledDataInput, NftMintInput } from '../types';
-import { type JoinNftToLobbyInput, type SubmitMoveInput } from '../types';
-import { getRandomColor, CDE_CONTRACT_MAPPING } from '@game/utils';
+import { CDE_CONTRACT_MAPPING } from '@game/utils';
 import type { Pool } from 'pg';
 import { isNftOwner } from 'paima-sdk/paima-utils-backend';
 import { isNftMint } from '../helpers';
+import type {
+  JoinNftToLobbyInput,
+  NftMintInput,
+  ScheduledDataInput,
+  SubmitMoveInput,
+} from '@game/utils/src/onChainTypes';
 
 export async function joinNftToLobbyId(
   player: WalletAddress,
   blockHeight: number,
   inputData: JoinNftToLobbyInput,
   dbConn: Pool,
-  randomnessGenerator: Prando
+  _randomnessGenerator: Prando
 ): Promise<SQLUpdate[]> {
   const contract_address = CDE_CONTRACT_MAPPING[inputData.cdeName];
   if (!contract_address) {
@@ -49,7 +52,7 @@ export async function joinNftToLobbyId(
   const updates = [persistJoinNFTToLobby(inputData.nftId, inputData.lobbyId, contract_address)];
   if (currentNFTState) {
     updates.push(
-      persistNewNFTState(inputData.nftId, getRandomColor(randomnessGenerator), contract_address)
+      persistNewNFTState(inputData.nftId, inputData.initialDescription, contract_address)
     );
   }
   return updates;
@@ -99,16 +102,7 @@ export async function submitMove(
     inputData.lobbyId,
     randomnessGenerator.nextString(10)
   );
-  const lobbyNFTs = await getNftsForLobby.run({ lobby_id: inputData.lobbyId }, dbConn);
-
-  const nftUpdates = lobbyNFTs.map(nft => {
-    return persistNewNFTState(
-      nft.nft_id,
-      getRandomColor(randomnessGenerator),
-      nft.contract_address
-    );
-  });
-  return [userMove, oracleMove, ...nftUpdates];
+  return [userMove, oracleMove];
 }
 
 export function persistNewMove(

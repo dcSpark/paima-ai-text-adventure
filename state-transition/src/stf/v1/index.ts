@@ -5,7 +5,6 @@ import type Prando from 'paima-sdk/paima-prando';
 import type { SubmittedChainData } from 'paima-sdk/paima-utils';
 import type { SQLUpdate } from 'paima-sdk/paima-db';
 import { submitMove, joinNftToLobbyId, scheduledData } from './persist/global.js';
-// import mw from '@game/middleware';
 
 export default async function (
   inputData: SubmittedChainData,

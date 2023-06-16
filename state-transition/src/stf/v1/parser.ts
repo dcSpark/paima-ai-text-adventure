@@ -1,12 +1,16 @@
 import type { ParserRecord } from 'paima-sdk/paima-utils-backend';
 import { PaimaParser } from 'paima-sdk/paima-utils-backend';
-import type { NftMintInput, ParsedSubmittedInput } from './types';
+import type { ParsedSubmittedInput } from './types';
+import type { DataInput, NftMintInput } from '@game/utils/src/onChainTypes';
+import { isDataInput } from './helpers';
 
 const myGrammar = `
-        joinNftToLobby       = j|lobbyId|nftId|initialDescription?|cdeName
-        submitMove      = @m||moveEntry|lobbyId|nftId|cdeName
-        nftMint             = nftmint|address|tokenId
+        joinNftToLobby  = join|data
+        submitMove      = move|data
+        nftMint         = nftmint|address|tokenId
 `;
+
+const base64Parser = () => PaimaParser.RegexParser(/^[A-Za-z0-9+/=]+$/);
 
 const nftMint: ParserRecord<NftMintInput> = {
   renameCommand: 'scheduledData',
@@ -17,26 +21,34 @@ const nftMint: ParserRecord<NftMintInput> = {
 
 const parserCommands = {
   joinNftToLobby: {
-    lobbyId: PaimaParser.NCharsParser(0, 64),
-    nftId: PaimaParser.NumberParser(0, 10000),
-    initialDescription: PaimaParser.OptionalParser('', PaimaParser.NCharsParser(0, 64)),
-    cdeName: PaimaParser.NCharsParser(0, 64),
+    data: base64Parser(),
   },
   submitMove: {
-    moveEntry: PaimaParser.NCharsParser(0, 100),
-    lobbyId: PaimaParser.NCharsParser(0, 64),
-    nftId: PaimaParser.NumberParser(0, 10000),
-    cdeName: PaimaParser.NCharsParser(0, 64),
+    data: base64Parser(),
   },
   nftMint,
 };
 
 const myParser = new PaimaParser(myGrammar, parserCommands);
 
+const dataInputInput: DataInput['input'][] = ['joinNftToLobby', 'submitMove'];
+
 function parse(s: string): ParsedSubmittedInput {
   try {
     const parsed = myParser.start(s);
-    return { input: parsed.command, ...parsed.args } as any;
+    let input = { input: parsed.command, ...parsed.args };
+
+    if ((dataInputInput as string[]).includes(input.input)) {
+      // this is ok to cast because if it's wrong we want it to throw
+      const data = (input as { input: string; data: string }).data;
+      const json = Buffer.from(data, 'base64').toString();
+      const parsedData = JSON.parse(json);
+      const parsedDataInput = { input: input.input, ...parsedData };
+      if (!isDataInput(parsedDataInput)) throw new Error('Invalid data input.');
+      input = parsedDataInput;
+    }
+
+    return input as ParsedSubmittedInput;
   } catch (e) {
     return { input: 'invalidString' };
   }

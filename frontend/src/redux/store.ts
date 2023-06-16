@@ -1,13 +1,9 @@
 import { LobbyNFTs } from '@game/utils';
-import {
-  createSlice,
-  PayloadAction,
-  configureStore,
-  MiddlewareArray,
-  Middleware,
-} from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, configureStore } from '@reduxjs/toolkit';
 
 import { Wallet } from 'paima-sdk/paima-mw-core';
+import { useDispatch } from 'react-redux';
+import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware';
 import { rtkApi } from './rtkQuery/rootApi';
 
 interface AppState {
@@ -51,19 +47,18 @@ const appSlice = createSlice({
 export const { setConnected, setUserWallet, setSelectedNft, setJoinedLobby, setLobbyNfts } =
   appSlice.actions;
 
+const reducer = {
+  app: appSlice.reducer,
+  [rtkApi.nft.reducerPath]: rtkApi.nft.reducer,
+  [rtkApi.lobby.reducerPath]: rtkApi.lobby.reducer,
+} as const;
+export type RootState = { [key in keyof typeof reducer]: ReturnType<typeof reducer[key]> };
+
 export const store = configureStore({
-  reducer: {
-    app: appSlice.reducer,
-    ...Object.fromEntries(Object.values(rtkApi).map(api => [api.reducerPath, api.reducer])),
-  },
-  middleware: getDefaultMiddleware =>
-    (() => {
-      let reduxMiddleware: MiddlewareArray<Middleware[]> = getDefaultMiddleware();
-      for (const api of Object.values(rtkApi)) {
-        reduxMiddleware = reduxMiddleware.concat(api.middleware);
-      }
-      return reduxMiddleware;
-    })(),
+  reducer,
+  middleware: (getDefaultMiddleware: CurriedGetDefaultMiddleware) =>
+    getDefaultMiddleware().concat([rtkApi.nft.middleware]).concat([rtkApi.lobby.middleware]),
 });
 
-export type RootState = ReturnType<typeof store.getState>;
+type AppDispatch = typeof store['dispatch'];
+export const useAppDispatch: () => AppDispatch = useDispatch;

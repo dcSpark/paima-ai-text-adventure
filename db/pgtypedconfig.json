@@ -10,7 +10,7 @@
   "failOnError": false,
   "camelCaseColumnNames": false,
   "db": {
-    "dbName": "postgres",
+    "dbName": "oracle_rpg",
     "user": "postgres",
     "password": "postgres",
     "host": "localhost",

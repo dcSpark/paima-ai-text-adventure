@@ -8,6 +8,7 @@ export const NETWORK_NAME: string = process.env.NETWORK_NAME ?? '';
 export const CHAIN_CURRENCY_DECIMALS: number = Number.parseInt(process.env.CHAIN_CURRENCY_DECIMALS);
 export const CHAIN_CURRENCY_TICKER: string = process.env.CHAIN_CURRENCY_TICKER;
 export const CHAIN_CURRENCY_LONGNAME: string = process.env.CHAIN_CURRENCY_LONGNAME;
+export const IMAGE_AI: string = process.env.IMAGE_AI;
 
 // TODO: we want to get rid of this
 export const imagePlaceholder =

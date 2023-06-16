@@ -1,45 +1,24 @@
 import { builder } from 'paima-sdk/paima-concise';
-import type { OldResult, Result } from 'paima-sdk/paima-mw-core';
-import {
-  postConciselyEncodedData,
-  getActiveAddress,
-  postConciseData,
-} from 'paima-sdk/paima-mw-core';
+import type { OldResult } from 'paima-sdk/paima-mw-core';
+import { postConciseData } from 'paima-sdk/paima-mw-core';
 
-import type { EndpointErrorFxn } from '../errors';
-import {
-  buildEndpointErrorFxn,
-  OpenWorldMiddlewareErrorCode,
-  PaimaMiddlewareErrorCode,
-} from '../errors';
-import type { WalletAddress } from 'paima-sdk/paima-utils';
-import { NFT_CDE } from '@game/utils';
+import { buildEndpointErrorFxn, PaimaMiddlewareErrorCode } from '../errors';
+import type { SubmitMoveInput, JoinNftToLobbyInput } from '@game/utils/src/onChainTypes';
 
-const getUserWallet = (errorFxn: EndpointErrorFxn): Result<string> => {
-  try {
-    const wallet = getActiveAddress();
-    if (wallet.length === 0) {
-      return errorFxn(PaimaMiddlewareErrorCode.WALLET_NOT_CONNECTED);
-    }
-    return { result: wallet, success: true };
-  } catch (err) {
-    return errorFxn(OpenWorldMiddlewareErrorCode.INTERNAL_INVALID_POSTING_MODE, err);
-  }
-};
-
-async function submitMoves(moveEntry: string, lobbyId: string, nftId: string): Promise<OldResult> {
+async function submitMoves(input: Omit<SubmitMoveInput, 'input'>): Promise<OldResult> {
   const errorFxn = buildEndpointErrorFxn('submitMoves');
 
-  const query = getUserWallet(errorFxn);
-  if (!query.success) return query;
-  // const userWalletAddress = query.result;
-
+  const cleanInput: Omit<SubmitMoveInput, 'input'> = {
+    moveEntry: input.moveEntry,
+    nftId: input.nftId,
+    lobbyId: input.lobbyId,
+    wallet: input.wallet,
+    cdeName: input.cdeName,
+  };
+  const base64Input = Buffer.from(JSON.stringify(cleanInput)).toString('base64');
   const conciseBuilder = builder.initialize();
-  conciseBuilder.setPrefix('m', true); // @m||moveEntry|lobbyId|nftId|cdeName
-  conciseBuilder.addValue({ value: String(moveEntry) });
-  conciseBuilder.addValue({ value: String(lobbyId) });
-  conciseBuilder.addValue({ value: String(nftId) });
-  conciseBuilder.addValue({ value: String(NFT_CDE) });
+  conciseBuilder.setPrefix('move');
+  conciseBuilder.addValue({ value: base64Input });
 
   try {
     const result = await postConciseData(conciseBuilder.build(), errorFxn);
@@ -53,66 +32,19 @@ async function submitMoves(moveEntry: string, lobbyId: string, nftId: string): P
   }
 }
 
-async function submitIncrement(x: number, y: number): Promise<OldResult> {
-  const errorFxn = buildEndpointErrorFxn('submitIncrement');
-
-  const query = getUserWallet(errorFxn);
-  if (!query.success) return query;
-  // const userWalletAddress = query.result;
-
-  const conciseBuilder = builder.initialize();
-  conciseBuilder.setPrefix('i');
-  conciseBuilder.addValue({ value: String(x), isStateIdentifier: true });
-  conciseBuilder.addValue({ value: String(y), isStateIdentifier: true });
-
-  try {
-    const result = await postConciselyEncodedData(conciseBuilder.build());
-    if (result.success) {
-      return { success: true, message: '' };
-    } else {
-      return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN);
-    }
-  } catch (err) {
-    return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN, err);
-  }
-}
-
-async function joinWorld(): Promise<OldResult> {
-  const errorFxn = buildEndpointErrorFxn('joinWorld');
-
-  const query = getUserWallet(errorFxn);
-  if (!query.success) return query;
-
-  const conciseBuilder = builder.initialize();
-  conciseBuilder.setPrefix('j');
-  try {
-    const result = await postConciselyEncodedData(conciseBuilder.build());
-    if (result.success) {
-      return { success: true, message: '' };
-    } else {
-      return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN);
-    }
-  } catch (err) {
-    return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN, err);
-  }
-}
-
-async function joinNftToLobby(
-  lobby_id: string,
-  nft_id: string,
-  initialDescription: string
-): Promise<OldResult> {
+async function joinNftToLobby(input: Omit<JoinNftToLobbyInput, 'input'>): Promise<OldResult> {
   const errorFxn = buildEndpointErrorFxn('joinNftToLobby');
 
-  const query = getUserWallet(errorFxn);
-  if (!query.success) return query;
-
+  const cleanInput: Omit<JoinNftToLobbyInput, 'input'> = {
+    lobbyId: input.lobbyId,
+    nftId: input.nftId,
+    initialDescription: input.initialDescription,
+    cdeName: input.cdeName,
+  };
+  const base64Input = Buffer.from(JSON.stringify(cleanInput)).toString('base64');
   const conciseBuilder = builder.initialize();
-  conciseBuilder.setPrefix('j');
-  conciseBuilder.addValue({ value: lobby_id });
-  conciseBuilder.addValue({ value: nft_id });
-  conciseBuilder.addValue({ value: initialDescription });
-  conciseBuilder.addValue({ value: NFT_CDE });
+  conciseBuilder.setPrefix('join');
+  conciseBuilder.addValue({ value: base64Input });
 
   try {
     const result = await postConciseData(conciseBuilder.build(), errorFxn);
@@ -127,8 +59,6 @@ async function joinNftToLobby(
 }
 
 export const writeEndpoints = {
-  joinWorld,
   submitMoves,
-  submitIncrement,
   joinNftToLobby,
 };

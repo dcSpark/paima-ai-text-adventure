@@ -10,19 +10,20 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { RootState, setJoinedLobby, setSelectedNft } from '@src/redux/store';
+import { RootState, setJoinedLobby, setSelectedNft, store, useAppDispatch } from '@src/redux/store';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import mw from '@game/middleware';
 import { useNavigate } from 'react-router-dom';
 import { skipToken } from '@reduxjs/toolkit/dist/query';
 import { rtkApi } from '@src/redux/rtkQuery/rootApi';
 import { ROUTES } from '@src/routes';
+import { NFT_CDE } from '@game/utils';
 
 const lobbyToJoin = '1'; // TODO magic constant
 
 export function Join() {
-  const dispatch = useDispatch();
+  const dispatch: typeof store['dispatch'] = useAppDispatch();
   const navigate = useNavigate();
   const selectedNftId = useSelector((state: RootState) => state.app.selectedNft);
   const userWallet = useSelector((state: RootState) => state.app.userWallet);
@@ -72,7 +73,12 @@ export function Join() {
 
     // TODO: can this happen? seems like this is done through the description modal
     // join lobby
-    const joinResult = await mw.joinNftToLobby(lobbyToJoin, selectedNftId, descriptionInput);
+    const joinResult = await mw.joinNftToLobby({
+      lobbyId: lobbyToJoin,
+      nftId: selectedNftId,
+      initialDescription: descriptionInput,
+      cdeName: NFT_CDE,
+    });
     if (joinResult.success) {
       dispatch(setJoinedLobby(lobbyToJoin));
       navigate(ROUTES.LOBBY);
@@ -80,7 +86,12 @@ export function Join() {
   }, [descriptionInput, dispatch, navigate, selectedNftId, userNFTs]);
 
   const handleSubmitDescription = useCallback(async () => {
-    const joinResult = await mw.joinNftToLobby(lobbyToJoin, selectedNftId, descriptionInput);
+    const joinResult = await mw.joinNftToLobby({
+      lobbyId: lobbyToJoin,
+      nftId: selectedNftId,
+      initialDescription: descriptionInput,
+      cdeName: NFT_CDE,
+    });
     if (joinResult.success) {
       dispatch(setJoinedLobby(lobbyToJoin));
       navigate(ROUTES.LOBBY);

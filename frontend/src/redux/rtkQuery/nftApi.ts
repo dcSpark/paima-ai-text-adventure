@@ -2,10 +2,12 @@ import { LobbyNFTs } from '@game/utils';
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/dist/query/react';
 import mw from '@game/middleware';
 import { fetchCurrentNftTokenId, fetchNftMaxSupply, fetchNftPrice } from '@src/services/contract';
+import { Tags } from './rtkTags';
 
 export const nftApi = createApi({
   reducerPath: 'nftApi',
   baseQuery: fakeBaseQuery(),
+  tagTypes: Object.values(Tags),
   endpoints: builder => ({
     getNFTsForWallet: builder.query<LobbyNFTs, string>({
       queryFn: async wallet_address => {

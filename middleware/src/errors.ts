@@ -33,22 +33,28 @@ export const enum OpenWorldMiddlewareErrorCode {
 }
 
 const OPENWORLD_MIDDLEWARE_ERROR_MESSAGES: OpenWorldErrorMessageMapping = {
-  [OpenWorldMiddlewareErrorCode.CALCULATED_ROUND_END_IN_PAST]: 'Calculated round end is in the past',
+  [OpenWorldMiddlewareErrorCode.GENERIC_OPENWORLD_ERROR]:
+    'Missing generic error message, TODO: fix me later.',
+  [OpenWorldMiddlewareErrorCode.CALCULATED_ROUND_END_IN_PAST]:
+    'Calculated round end is in the past',
   [OpenWorldMiddlewareErrorCode.UNABLE_TO_BUILD_EXECUTOR]:
     'Unable to build executor from data returned from server -- executor might not exist',
-  [OpenWorldMiddlewareErrorCode.NO_OPEN_LOBBIES]: 'No open lobbies were found, please try again later',
+  [OpenWorldMiddlewareErrorCode.NO_OPEN_LOBBIES]:
+    'No open lobbies were found, please try again later',
   [OpenWorldMiddlewareErrorCode.RANDOM_OPEN_LOBBY_FALLBACK]:
     'getRandomOpenLobby returned no lobby, falling back on getOpenLobbies',
   [OpenWorldMiddlewareErrorCode.FAILURE_VERIFYING_LOBBY_CREATION]:
     'Failure while verifying lobby creation',
-  [OpenWorldMiddlewareErrorCode.FAILURE_VERIFYING_LOBBY_CLOSE]: 'Failure while verifying lobby closing',
+  [OpenWorldMiddlewareErrorCode.FAILURE_VERIFYING_LOBBY_CLOSE]:
+    'Failure while verifying lobby closing',
   [OpenWorldMiddlewareErrorCode.FAILURE_VERIFYING_LOBBY_JOIN]: 'Failure while verifying lobby join',
   [OpenWorldMiddlewareErrorCode.CANNOT_JOIN_OWN_LOBBY]: 'Cannot join your own lobby',
   [OpenWorldMiddlewareErrorCode.CANNOT_CLOSE_SOMEONES_LOBBY]:
     'Cannot close lobby created by someone else',
   [OpenWorldMiddlewareErrorCode.SUBMIT_MOVES_EXACTLY_3]: 'Exactly three moves must be submitted',
   [OpenWorldMiddlewareErrorCode.SUBMIT_MOVES_INVALID_MOVES]: 'One or more invalid moves submitted',
-  [OpenWorldMiddlewareErrorCode.INTERNAL_INVALID_DEPLOYMENT]: 'Internal error: Invalid deployment set',
+  [OpenWorldMiddlewareErrorCode.INTERNAL_INVALID_DEPLOYMENT]:
+    'Internal error: Invalid deployment set',
   [OpenWorldMiddlewareErrorCode.INTERNAL_INVALID_POSTING_MODE]:
     'Internal error: Invalid posting mode set',
 };
