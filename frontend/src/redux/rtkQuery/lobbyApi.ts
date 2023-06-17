@@ -41,28 +41,24 @@ export const lobbyApi = createApi({
     }),
     fetchImages: builder.mutation<boolean, Description[]>({
       queryFn: async descriptions => {
-        console.log('HELLO FETCH', descriptions);
         let hadUpdates = false;
         const set = new Set(descriptions);
-        await Promise.all(
-          Array.from(set.values()).map(async description => {
-            if (imageCache.get(description) != null) return;
+        for (const description of Array.from(set.values())) {
+          if (imageCache.get(description) != null) continue;
 
-            const response = await axios.post(
-              IMAGE_AI,
-              { prompt: description },
-              {
-                headers: { 'Content-Type': 'application/json' },
-                responseType: 'arraybuffer',
-              }
-            );
-            console.log('HELLO RESP', response);
-            if (response.status === 200) {
-              hadUpdates = true;
-              imageCache.set(description, Buffer.from(response.data, 'binary').toString('base64'));
+          const response = await axios.post(
+            IMAGE_AI,
+            { prompt: description },
+            {
+              headers: { 'Content-Type': 'application/json' },
+              responseType: 'arraybuffer',
             }
-          })
-        );
+          );
+          if (response.status === 200) {
+            hadUpdates = true;
+            imageCache.set(description, Buffer.from(response.data, 'binary').toString('base64'));
+          }
+        }
         return { data: hadUpdates };
       },
       invalidatesTags: hadUpdates => (hadUpdates ? [Tags.characterImages] : []),

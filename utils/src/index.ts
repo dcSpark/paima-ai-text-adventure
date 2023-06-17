@@ -9,5 +9,7 @@ export const NFT_CDE = 'OracleNFT';
 export const CDE_CONTRACT_MAPPING: Record<string, string> = {
   [NFT_CDE]: '0x7505bB649C0fdBd908Fa577EbB93514B6bceFEcF',
 };
+if (process.env.ORACLE_AI == null) throw new Error(`ORACLE_AI not set`);
+export const ORACLE_AI = process.env.ORACLE_AI;
 
 export * from './types.js';

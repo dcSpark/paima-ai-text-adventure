@@ -190,6 +190,38 @@ const getNftsForLobbyIR: any = {"usedParamSet":{"lobby_id":true},"params":[{"nam
 export const getNftsForLobby = new PreparedQuery<IGetNftsForLobbyParams,IGetNftsForLobbyResult>(getNftsForLobbyIR);
 
 
+/** 'GetMessageHistoryForLobby' parameters type */
+export interface IGetMessageHistoryForLobbyParams {
+  lobby_id: string | null | void;
+}
+
+/** 'GetMessageHistoryForLobby' return type */
+export interface IGetMessageHistoryForLobbyResult {
+  move_entry: string | null;
+  nft_id: string | null;
+}
+
+/** 'GetMessageHistoryForLobby' query type */
+export interface IGetMessageHistoryForLobbyQuery {
+  params: IGetMessageHistoryForLobbyParams;
+  result: IGetMessageHistoryForLobbyResult;
+}
+
+const getMessageHistoryForLobbyIR: any = {"usedParamSet":{"lobby_id":true},"params":[{"name":"lobby_id","required":false,"transform":{"type":"scalar"},"locs":[{"a":154,"b":162}]}],"statement":"SELECT match_moves.move_entry, match_moves.nft_id\nFROM match_moves JOIN lobbies\n  ON match_moves.lobby_id = lobbies.lobby_id\nWHERE match_moves.lobby_id = :lobby_id\nORDER BY match_moves.move_number"};
+
+/**
+ * Query generated from SQL:
+ * ```
+ * SELECT match_moves.move_entry, match_moves.nft_id
+ * FROM match_moves JOIN lobbies
+ *   ON match_moves.lobby_id = lobbies.lobby_id
+ * WHERE match_moves.lobby_id = :lobby_id
+ * ORDER BY match_moves.move_number
+ * ```
+ */
+export const getMessageHistoryForLobby = new PreparedQuery<IGetMessageHistoryForLobbyParams,IGetMessageHistoryForLobbyResult>(getMessageHistoryForLobbyIR);
+
+
 /** 'GetNftStateForOwner' parameters type */
 export interface IGetNftStateForOwnerParams {
   owner: string;

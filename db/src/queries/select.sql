@@ -31,6 +31,13 @@ ORDER BY id DESC;
 SELECT * FROM nft_state
 WHERE lobby_id = :lobby_id;
 
+/* @name getMessageHistoryForLobby */
+SELECT match_moves.move_entry, match_moves.nft_id
+FROM match_moves JOIN lobbies
+  ON match_moves.lobby_id = lobbies.lobby_id
+WHERE match_moves.lobby_id = :lobby_id
+ORDER BY match_moves.move_number
+;
 
 /* @name getNFTStateForOwner */
 SELECT *

@@ -15,8 +15,9 @@ import {
   addOracleMove,
   updateNftState,
   getNftState,
+  getMessageHistoryForLobby,
 } from '@game/db';
-import { CDE_CONTRACT_MAPPING } from '@game/utils';
+import { CDE_CONTRACT_MAPPING, ORACLE_AI } from '@game/utils';
 import type { Pool } from 'pg';
 import { isNftOwner } from 'paima-sdk/paima-utils-backend';
 import { isNftMint } from '../helpers';
@@ -26,6 +27,7 @@ import type {
   ScheduledDataInput,
   SubmitMoveInput,
 } from '@game/utils/src/onChainTypes';
+import axios from 'axios';
 
 export async function joinNftToLobbyId(
   player: WalletAddress,
@@ -98,10 +100,34 @@ export async function submitMove(
     inputData.moveEntry,
     player
   );
-  const oracleMove = persistNewOracleResponse(
-    inputData.lobbyId,
-    randomnessGenerator.nextString(10)
+
+  const messageHistory = await getMessageHistoryForLobby.run(
+    { lobby_id: inputData.lobbyId },
+    dbConn
   );
+
+  const oracleName = 'oracle';
+  const entryToMessageInPrompt = (entry: { nft_id: null | string; move_entry: null | string }) =>
+    `${entry.nft_id ?? oracleName}: ${entry.move_entry}`;
+  const oraclePrompt = [
+    `This is a conversation between numbered players and a narrator called ${oracleName}:`,
+    '',
+    messageHistory.map(entryToMessageInPrompt).join('\n'),
+    entryToMessageInPrompt({ nft_id: inputData.nftId, move_entry: inputData.moveEntry }),
+    '',
+    `Generate the next response from ${oracleName}.`,
+  ].join('\n');
+  const oracleAiResponse = await axios.post(
+    ORACLE_AI,
+    { prompt: oraclePrompt },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  const oracleResponse =
+    oracleAiResponse.status === 200 && typeof oracleAiResponse.data?.response === 'string'
+      ? oracleAiResponse.data.response
+      : 'Godzilla Had a Stroke Trying to Read This and F*ing Died';
+
+  const oracleMove = persistNewOracleResponse(inputData.lobbyId, oracleResponse);
   return [userMove, oracleMove];
 }
 
