@@ -41,12 +41,14 @@ export default function App() {
             backgroundRepeat: 'no-repeat',
             height: '100vh',
             width: '100vw',
-            py: 4,
+            padding: 4,
+            display: 'flex',
           }}
         >
           <Box
             sx={{
-              py: 4,
+              flex: 'auto',
+              padding: 4,
               borderRadius: 2,
               display: 'flex',
               flexDirection: 'column',
