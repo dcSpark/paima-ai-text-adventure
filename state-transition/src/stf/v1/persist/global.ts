@@ -7,6 +7,8 @@ import type {
   IAddOracleMoveParams,
   IUpdateNftStateParams,
   ICreateNftStateParams,
+  IGetNftsForLobbyResult,
+  IGetMessageHistoryForLobbyResult,
 } from '@game/db';
 import {
   createNftState,
@@ -16,8 +18,9 @@ import {
   updateNftState,
   getNftState,
   getMessageHistoryForLobby,
+  getNftsForLobby,
 } from '@game/db';
-import { CDE_CONTRACT_MAPPING, ORACLE_AI } from '@game/utils';
+import { CDE_CONTRACT_MAPPING, NFT_CDE, ORACLE_AI } from '@game/utils';
 import type { Pool } from 'pg';
 import { isNftOwner } from 'paima-sdk/paima-utils-backend';
 import { isNftMint } from '../helpers';
@@ -75,13 +78,27 @@ export const scheduledData = async (
   return [];
 };
 
+function formatChatHistory(req: {
+  entries: Array<IGetMessageHistoryForLobbyResult>;
+  oracleName: string;
+}) {
+  return req.entries
+    .map(entry => `${entry.nft_id ?? req.oracleName}: ${entry.move_entry}`)
+    .join('\n');
+}
+
+function formatDescriptions(req: { entries: Array<IGetNftsForLobbyResult> }) {
+  return req.entries.map(entry => `${entry.nft_id}: ${entry.nft_description}`).join('\n');
+}
+
 export async function submitMove(
   player: WalletAddress,
   blockHeight: number,
   inputData: SubmitMoveInput,
   dbConn: Pool,
-  randomnessGenerator: Prando
+  _randomnessGenerator: Prando
 ): Promise<SQLUpdate[]> {
+  const updates: SQLUpdate[] = [];
   const walletOwnsNFT = await isNftOwner(
     dbConn,
     inputData.cdeName,
@@ -93,27 +110,33 @@ export async function submitMove(
   }
   const contract_address = CDE_CONTRACT_MAPPING[inputData.cdeName];
 
-  const userMove = persistNewMove(
-    inputData.lobbyId,
-    inputData.nftId,
-    contract_address,
-    inputData.moveEntry,
-    player
+  updates.push(
+    persistNewMove(
+      inputData.lobbyId,
+      inputData.nftId,
+      contract_address,
+      inputData.moveEntry,
+      player
+    )
   );
 
-  const messageHistory = await getMessageHistoryForLobby.run(
+  const chatHistoryFromDb = await getMessageHistoryForLobby.run(
     { lobby_id: inputData.lobbyId },
     dbConn
   );
 
+  const lobbyNfts = await getNftsForLobby.run({ lobby_id: inputData.lobbyId }, dbConn);
+
   const oracleName = 'oracle';
-  const entryToMessageInPrompt = (entry: { nft_id: null | string; move_entry: null | string }) =>
-    `${entry.nft_id ?? oracleName}: ${entry.move_entry}`;
+  let chatHistory = formatChatHistory({
+    oracleName,
+    entries: [...chatHistoryFromDb, { nft_id: inputData.nftId, move_entry: inputData.moveEntry }],
+  });
+
   const oraclePrompt = [
     `This is a conversation between numbered players and a narrator called ${oracleName}:`,
     '',
-    messageHistory.map(entryToMessageInPrompt).join('\n'),
-    entryToMessageInPrompt({ nft_id: inputData.nftId, move_entry: inputData.moveEntry }),
+    chatHistory,
     '',
     `Generate the next response from ${oracleName}.`,
   ].join('\n');
@@ -126,9 +149,49 @@ export async function submitMove(
     oracleAiResponse.status === 200 && typeof oracleAiResponse.data?.response === 'string'
       ? oracleAiResponse.data.response
       : 'Godzilla Had a Stroke Trying to Read This and F*ing Died';
+  updates.push(persistNewOracleResponse(inputData.lobbyId, oracleResponse));
 
-  const oracleMove = persistNewOracleResponse(inputData.lobbyId, oracleResponse);
-  return [userMove, oracleMove];
+  chatHistory = formatChatHistory({
+    oracleName,
+    entries: [
+      ...chatHistoryFromDb,
+      { nft_id: inputData.nftId, move_entry: inputData.moveEntry },
+      { nft_id: null, move_entry: oracleResponse },
+    ],
+  });
+  const descriptions = formatDescriptions({ entries: lobbyNfts });
+  // TODO: try Promise.all, but we don't know how the AI service handles concurrency yet
+  for (const nft of lobbyNfts) {
+    const descriptionPrompt = [
+      `I will give you the conversation between numbered players and a narrator called ${oracleName}.`,
+      `I will give you the current descriptions of the numbered players.`,
+      `Generate a new description for player ${nft.nft_id}, at most 50 words long, only slightly different from their previous description.`,
+      '',
+      `This is the conversation between numbered players and a narrator called ${oracleName}:`,
+      chatHistory,
+      '',
+      `These are the current descriptions of the numbered players:`,
+      descriptions,
+    ].join('\n');
+
+    const descriptionAiResponse = await axios.post(
+      ORACLE_AI,
+      { prompt: descriptionPrompt },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    const newDescription =
+      descriptionAiResponse.status === 200 &&
+      typeof descriptionAiResponse.data?.response === 'string' &&
+      descriptionAiResponse.data.response.length > 0
+        ? descriptionAiResponse.data.response
+        : nft.nft_description;
+    console.log('HELLO', newDescription);
+
+    updates.push(persistNewNFTState(nft.nft_id, newDescription, CDE_CONTRACT_MAPPING[NFT_CDE]));
+  }
+
+  return updates;
 }
 
 export function persistNewMove(
