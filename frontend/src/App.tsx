@@ -66,7 +66,6 @@ export default function App() {
             />
             <Box
               sx={{
-                fontFamily: 'cinzel-decorative, sherif',
                 flex: 'auto',
                 margin: 4,
                 padding: 4,
