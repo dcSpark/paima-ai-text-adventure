@@ -171,18 +171,10 @@ export async function submitMove(
   });
   for (const nft of lobbyNfts) {
     const descriptionPrompt = [
-      'I will give you a conversation between players and oracle.',
-      `The ${oracleName} makes the players act like they are in a fantasy RPG world.`,
-      'Every player is referred to by a number.',
-      'Every message is inside square brackets.',
-      '',
-      `This is the current description of player ${nft.nft_id}:`,
-      `${nft.nft_description}`,
-      '',
-      `Messages from player ${nft.nft_id} begin with \"${nft.nft_id}:\".`,
-      `Describe the appearance of player ${nft.nft_id}, using 20 to 50 words, based on his previous description and what happened to him in the last 2 messages from the conversation.`,
-
-      `This is the conversation between players and oracle:`,
+      'Here is a chat message between multiple participants.',
+      `${nft.nft_id}: ${nft.nft_description}`,
+      chatHistory,
+      `Give me a descriptive description of Player ${nft.nft_id} which is the character in the chat message above that is suitable for a text-to-image AI like DALL-E.`,
     ].join('\n');
 
     const descriptionAiResponse = await axios.post(
