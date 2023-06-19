@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Box, Typography, Link, Button, useTheme } from '@mui/material';
-import { EXPLORER_URL, imagePlaceholder } from '@src/services/constants';
+import { EXPLORER_URL } from '@src/services/constants';
 import { useNavigate } from 'react-router-dom';
 import { rtkApi } from '@src/redux/rtkQuery/rootApi';
 import BigNumber from 'bignumber.js';
 import { OpenInNewOutlined } from '@mui/icons-material';
 import NativeTokenAmount from '@src/components/NativeTokenAmount';
 import AddressInfo from '@src/components/AddressInfo';
-import AvailableNftId from '@src/components/AvailableNftId';
-import NFTImage from '@src/components/NFTImage';
 import { buyNft } from '@src/services/contract';
 import { useSelector } from 'react-redux';
 import { RootState } from '@src/redux/store';
@@ -48,7 +46,6 @@ const NFTSale = () => {
         {title[step]}
       </Typography>
       <AddressInfo />
-      <NFTImage src={imagePlaceholder} label={<AvailableNftId />} />
       {step === SaleStep.overview && (
         <>
           <NativeTokenAmount amount={price} />

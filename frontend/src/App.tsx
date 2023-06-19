@@ -33,46 +33,68 @@ export default function App() {
   return (
     <WagmiConfig client={client}>
       <ThemeProvider theme={theme}>
-        <Container
-          sx={{
-            backgroundImage: `url(${wizardImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            height: '100vh',
-            width: '100vw',
-            padding: 4,
-            display: 'flex',
-          }}
+        <Box
+          minWidth="100vw"
+          maxWidth="100vw"
+          minHeight="100vh"
+          maxHeight="100vh"
+          // this is ambience, whatever you do, don't scroll it
+          overflow="visible"
+          // stolen from flint
+          bgcolor="#29293E"
         >
-          <Box
+          <Container
             sx={{
-              flex: 'auto',
-              padding: 4,
-              borderRadius: 2,
+              position: 'relative',
+              height: '100vh',
+              width: '100vw',
               display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor: 'rgba(119, 109, 104, 0.5)',
-              color: 'white',
             }}
           >
-            <PreCasher />
-            <DisconnectModal />
-            <WrongChainModal />
-            <Typography variant="h4" component="h1" gutterBottom>
-              Oracle RPG
-            </Typography>
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: '0',
+                backgroundImage: `url(${wizardImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                opacity: '0.25',
+                width: '100%',
+                height: '100%',
+              }}
+            />
+            <Box
+              sx={{
+                fontFamily: 'cinzel-decorative, sherif',
+                flex: 'auto',
+                margin: 4,
+                padding: 4,
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                backgroundColor: 'rgba(119, 109, 104, 0.5)',
+                color: 'white',
+              }}
+            >
+              <PreCasher />
+              <DisconnectModal />
+              <WrongChainModal />
+              <Typography variant="h4" component="h1" gutterBottom>
+                Oracle RPG
+              </Typography>
 
-            <Routes>
-              <Route element={<Login />} path={ROUTES.ROOT} />
-              <Route element={<Join />} path={ROUTES.JOIN} />
-              <Route element={<NoNft />} path={ROUTES.NO_NFT} />
-              <Route element={<Lobby />} path={ROUTES.LOBBY} />
-              <Route element={<NFTSale />} path={ROUTES.BUY} />
-            </Routes>
-          </Box>
-        </Container>
+              <Routes>
+                <Route element={<Login />} path={ROUTES.ROOT} />
+                <Route element={<Join />} path={ROUTES.JOIN} />
+                <Route element={<NoNft />} path={ROUTES.NO_NFT} />
+                <Route element={<Lobby />} path={ROUTES.LOBBY} />
+                <Route element={<NFTSale />} path={ROUTES.BUY} />
+              </Routes>
+            </Box>
+          </Container>
+        </Box>
       </ThemeProvider>
     </WagmiConfig>
   );
