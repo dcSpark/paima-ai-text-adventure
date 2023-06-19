@@ -81,9 +81,19 @@ function formatChatHistory(req: {
   entries: Array<IGetMessageHistoryForLobbyResult>;
   oracleName: string;
 }) {
-  return req.entries
+  let result = req.entries
     .map(entry => `${entry.nft_id ?? req.oracleName}: [${entry.move_entry}]`)
     .join('\n');
+
+  const maxChars = 2000;
+
+  if (result.length > maxChars) {
+    // Cut the text from the beginning, to ensure the end part remains
+    const excessCharacters = result.length - maxChars;
+    result = '...' + result.substring(excessCharacters + 1);
+  }
+
+  return result;
 }
 
 const oracleName = 'oracle';
@@ -140,15 +150,11 @@ export async function submitMove(
     entries: [...chatHistoryFromDb, { nft_id: inputData.nftId, move_entry: inputData.moveEntry }],
   });
   const oraclePrompt = [
-    `I will give you a conversation between players and ${oracleName}.`,
-    `The ${oracleName} makes the players act like they are in a fantasy RPG world.`,
-    `Every player is referred to by a number.`,
-    `Every message is inside square brackets.`,
-    `Generate the next response from ${oracleName}.`,
-    '',
+    'Here is a chat message between multiple participants:',
     chatHistory,
-    '',
-    `Generate the next response from ${oracleName}.`,
+    `
+    This is a conversation between players and a game master. The game master (${oracleName}) make the players act like they are in a fantasy RPG world. Every player is referred to by a number. Every message is inside square brackets. Generate the next response from the ${oracleName}. Give a slight higher weight to recent messages. Important: also summarize the state of the world.
+    `,
   ].join('\n');
   const oracleAiResponse = await axios.post(
     ORACLE_AI,
@@ -169,12 +175,15 @@ export async function submitMove(
       { nft_id: null, move_entry: oracleResponse },
     ],
   });
+
   for (const nft of lobbyNfts) {
     const descriptionPrompt = [
-      'Here is a chat message between multiple participants.',
+      'Brief description of ' + nft.nft_id,
       `${nft.nft_id}: ${nft.nft_description}`,
+      'Here is a chat message between multiple participants:',
       chatHistory,
-      `Give me a descriptive description of Player ${nft.nft_id} which is the character in the chat message above that is suitable for a text-to-image AI like DALL-E.`,
+      ` `,
+      `Tell me the top 4 most important things about ${nft.nft_id} -- be brief. This will be used for a text-to-image AI like DALL-E.`,
     ].join('\n');
 
     const descriptionAiResponse = await axios.post(
