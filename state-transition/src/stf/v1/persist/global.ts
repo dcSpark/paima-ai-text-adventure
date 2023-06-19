@@ -7,7 +7,6 @@ import type {
   IAddOracleMoveParams,
   IUpdateNftStateParams,
   ICreateNftStateParams,
-  IGetNftsForLobbyResult,
   IGetMessageHistoryForLobbyResult,
 } from '@game/db';
 import {
@@ -83,12 +82,21 @@ function formatChatHistory(req: {
   oracleName: string;
 }) {
   return req.entries
-    .map(entry => `${entry.nft_id ?? req.oracleName}: ${entry.move_entry}`)
+    .map(entry => `${entry.nft_id ?? req.oracleName}: [${entry.move_entry}]`)
     .join('\n');
 }
 
-function formatDescriptions(req: { entries: Array<IGetNftsForLobbyResult> }) {
-  return req.entries.map(entry => `${entry.nft_id}: ${entry.nft_description}`).join('\n');
+const oracleName = 'oracle';
+const oracleFallback = `The ${oracleName} cooks some tea.`;
+function trimOracleResponse(raw: string) {
+  // something like "oracle: [message]", pretty reliable
+  const splitBrackets = raw.split('[').flatMap(s => s.split(']'));
+  if (splitBrackets.length === 3) return splitBrackets[1];
+  // something like "oracle: message", happens later on
+  const splitColumn = raw.split(':');
+  if (splitColumn.length === 2) return splitColumn[1];
+  // no clue, hope for the best
+  return raw;
 }
 
 export async function submitMove(
@@ -127,14 +135,16 @@ export async function submitMove(
 
   const lobbyNfts = await getNftsForLobby.run({ lobby_id: inputData.lobbyId }, dbConn);
 
-  const oracleName = 'oracle';
   let chatHistory = formatChatHistory({
     oracleName,
     entries: [...chatHistoryFromDb, { nft_id: inputData.nftId, move_entry: inputData.moveEntry }],
   });
-
   const oraclePrompt = [
-    `This is a conversation between numbered players and a narrator called ${oracleName}:`,
+    `I will give you a conversation between players and ${oracleName}.`,
+    `The ${oracleName} makes the players act like they are in a fantasy RPG world.`,
+    `Every player is referred to by a number.`,
+    `Every message is inside square brackets.`,
+    `Generate the next response from ${oracleName}.`,
     '',
     chatHistory,
     '',
@@ -147,8 +157,8 @@ export async function submitMove(
   );
   const oracleResponse =
     oracleAiResponse.status === 200 && typeof oracleAiResponse.data?.response === 'string'
-      ? oracleAiResponse.data.response
-      : 'Godzilla Had a Stroke Trying to Read This and F*ing Died';
+      ? trimOracleResponse(oracleAiResponse.data.response)
+      : oracleFallback;
   updates.push(persistNewOracleResponse(inputData.lobbyId, oracleResponse));
 
   chatHistory = formatChatHistory({
@@ -159,19 +169,20 @@ export async function submitMove(
       { nft_id: null, move_entry: oracleResponse },
     ],
   });
-  const descriptions = formatDescriptions({ entries: lobbyNfts });
-  // TODO: try Promise.all, but we don't know how the AI service handles concurrency yet
   for (const nft of lobbyNfts) {
     const descriptionPrompt = [
-      `I will give you the conversation between numbered players and a narrator called ${oracleName}.`,
-      `I will give you the current descriptions of the numbered players.`,
-      `Generate a new description for player ${nft.nft_id}, at most 50 words long, only slightly different from their previous description.`,
+      'I will give you a conversation between players and oracle.',
+      `The ${oracleName} makes the players act like they are in a fantasy RPG world.`,
+      'Every player is referred to by a number.',
+      'Every message is inside square brackets.',
       '',
-      `This is the conversation between numbered players and a narrator called ${oracleName}:`,
-      chatHistory,
+      `This is the current description of player ${nft.nft_id}:`,
+      `${nft.nft_description}`,
       '',
-      `These are the current descriptions of the numbered players:`,
-      descriptions,
+      `Messages from player ${nft.nft_id} begin with \"${nft.nft_id}:\".`,
+      `Describe the appearance of player ${nft.nft_id}, using 20 to 50 words, based on his previous description and what happened to him in the last 2 messages from the conversation.`,
+
+      `This is the conversation between players and oracle:`,
     ].join('\n');
 
     const descriptionAiResponse = await axios.post(
@@ -186,7 +197,6 @@ export async function submitMove(
       descriptionAiResponse.data.response.length > 0
         ? descriptionAiResponse.data.response
         : nft.nft_description;
-    console.log('HELLO', newDescription);
 
     updates.push(persistNewNFTState(nft.nft_id, newDescription, CDE_CONTRACT_MAPPING[NFT_CDE]));
   }
