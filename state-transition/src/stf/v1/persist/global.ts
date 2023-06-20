@@ -184,6 +184,7 @@ export async function submitMove(
       chatHistory,
       ` `,
       `Tell me the top 4 most important things about player ${nft.nft_id} -- be brief. This will be used for a text-to-image AI like DALL-E.`,
+      `Tell me the top 4 most important things about player ${nft.nft_id} -- be brief. Most recent messages are more slightly more important. This will be used for a text-to-image AI like DALL-E.`,
     ].join('\n');
 
     const descriptionAiResponse = await axios.post(
