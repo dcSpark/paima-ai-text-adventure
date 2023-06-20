@@ -2,53 +2,47 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Input,
   MenuItem,
   Select,
+  TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
-import { RootState, setJoinedLobby, setSelectedNft, store, useAppDispatch } from '@src/redux/store';
+import {
+  RootState,
+  setBuyModal,
+  setJoinedLobby,
+  setSelectedNft,
+  store,
+  useAppDispatch,
+} from '@src/redux/store';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import mw from '@game/middleware';
-import { useNavigate } from 'react-router-dom';
 import { skipToken } from '@reduxjs/toolkit/dist/query';
 import { rtkApi } from '@src/redux/rtkQuery/rootApi';
-import { ROUTES } from '@src/routes';
 import { NFT_CDE } from '@game/utils';
 
 const lobbyToJoin = '1'; // TODO magic constant
 
-export function Join() {
+export function JoinModal() {
+  const theme = useTheme();
   const dispatch: typeof store['dispatch'] = useAppDispatch();
-  const navigate = useNavigate();
   const selectedNftId = useSelector((state: RootState) => state.app.selectedNft);
   const userWallet = useSelector((state: RootState) => state.app.userWallet);
+  const joinedLobby = useSelector((state: RootState) => state.app.joinedLobby);
   const [showDescriptionPrompt, setShowDescriptionPrompt] = useState(false);
   const [descriptionInput, setDescriptionInput] = useState('');
   const { data: userNFTs } = rtkApi.nft.endpoints.getNFTsForWallet.useQuery(
     userWallet ? userWallet.walletAddress : skipToken,
     { pollingInterval: 5_000 }
   );
+  const open = joinedLobby == null && userNFTs != null && userNFTs.length !== 0;
 
   useEffect(() => {
     // assert: an nft is selected after load
-    if (userNFTs == null) return;
-
-    if (selectedNftId == null && userNFTs.length > 0) {
-      dispatch(setSelectedNft(userNFTs[0].nft_id));
-    }
-  });
-
-  useEffect(() => {
-    // assert: user owns nft after load
-    if (userNFTs == null) return;
-
-    if (userNFTs.length === 0) {
-      navigate(ROUTES.NO_NFT);
+    if (userNFTs != null && selectedNftId == null && userNFTs.length > 0) {
+      dispatch(setSelectedNft(userNFTs[userNFTs.length - 1].nft_id));
     }
   });
 
@@ -61,7 +55,6 @@ export function Join() {
     if (selectedNFT.lobby_id != null && selectedNFT.nft_description.length > 0) {
       // go to previously joined lobby
       dispatch(setJoinedLobby(selectedNFT.lobby_id));
-      navigate(ROUTES.LOBBY);
       return;
     }
 
@@ -70,20 +63,7 @@ export function Join() {
       setShowDescriptionPrompt(true);
       return;
     }
-
-    // TODO: can this happen? seems like this is done through the description modal
-    // join lobby
-    const joinResult = await mw.joinNftToLobby({
-      lobbyId: lobbyToJoin,
-      nftId: selectedNftId,
-      initialDescription: descriptionInput,
-      cdeName: NFT_CDE,
-    });
-    if (joinResult.success) {
-      dispatch(setJoinedLobby(lobbyToJoin));
-      navigate(ROUTES.LOBBY);
-    }
-  }, [descriptionInput, dispatch, navigate, selectedNftId, userNFTs]);
+  }, [dispatch, selectedNftId, userNFTs]);
 
   const handleSubmitDescription = useCallback(async () => {
     const joinResult = await mw.joinNftToLobby({
@@ -94,16 +74,38 @@ export function Join() {
     });
     if (joinResult.success) {
       dispatch(setJoinedLobby(lobbyToJoin));
-      navigate(ROUTES.LOBBY);
     }
-  }, [descriptionInput, dispatch, navigate, selectedNftId]);
+  }, [descriptionInput, dispatch, selectedNftId]);
+
+  console.log('HELLO', showDescriptionPrompt);
 
   if (userNFTs == null || userNFTs.length === 0) return <Box />;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography>Select an NFT to join the game with</Typography>
+    <Dialog
+      open={open}
+      PaperProps={{
+        sx: {
+          border: 'none',
+          borderRadius: '4px',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: theme.spacing(3),
+          bgcolor: '#282828',
+          border: '12px solid #ffffff33',
+          color: 'white',
+        }}
+      >
+        <Typography variant="h2">
+          <span style={{ fontWeight: 700 }}>Select an NFT</span> to join the game with
+        </Typography>
+        <Box minHeight={theme.spacing(2.5)} />
         <Select
           sx={{ width: '200px' }}
           value={selectedNftId ?? ''}
@@ -117,41 +119,68 @@ export function Join() {
             </MenuItem>
           ))}
         </Select>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={handleJoin}>
+        <Box minHeight={theme.spacing(2)} />
+        <Button fullWidth variant="contained" onClick={handleJoin}>
           Join
         </Button>
-        <Button onClick={() => navigate(ROUTES.BUY)}>Buy</Button>
+        <Box minHeight={theme.spacing(1)} />
+        <Button fullWidth onClick={() => dispatch(setBuyModal(true))}>
+          Buy
+        </Button>
         <Dialog
-          onClose={() => {
-            setShowDescriptionPrompt(false);
-          }}
           open={showDescriptionPrompt}
+          PaperProps={{
+            sx: {
+              border: 'none',
+              borderRadius: '4px',
+            },
+          }}
         >
-          <DialogTitle>Enter your initial Character Description</DialogTitle>
-          <DialogContent>
-            <Input
-              type="text"
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: theme.spacing(3),
+              bgcolor: '#282828',
+              border: '12px solid #ffffff33',
+              color: 'white',
+            }}
+          >
+            <Typography variant="h2">
+              <span style={{ fontWeight: 700 }}>Define Your Destiny</span> with a Character
+              Description in Oracle RPG!
+            </Typography>
+            <Box minHeight={theme.spacing(2.5)} />
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
               value={descriptionInput}
               onChange={event => {
-                setDescriptionInput(event.target.value);
+                setDescriptionInput(event.target.value?.slice(0, 200));
               }}
             />
-          </DialogContent>
-          <DialogActions>
+            <Box minHeight={theme.spacing(2)} />
+            <Button variant="contained" onClick={handleSubmitDescription}>
+              Submit
+            </Button>
             <Button
               variant="text"
+              sx={{
+                bgcolor: 'transparent',
+                color: 'white',
+              }}
               onClick={() => {
                 setShowDescriptionPrompt(false);
               }}
             >
               Cancel
             </Button>
-            <Button variant="contained" onClick={handleSubmitDescription}>
-              OK
-            </Button>
-          </DialogActions>
+            <Box minHeight={theme.spacing(1)} />
+          </Box>
         </Dialog>
       </Box>
-    </Box>
+    </Dialog>
   );
 }

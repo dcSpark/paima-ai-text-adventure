@@ -8,6 +8,17 @@ declare module '@mui/material/styles' {
     lg: true;
     xl: false;
   }
+  interface TypographyVariantsOptions {
+    sender: React.CSSProperties;
+  }
+}
+
+// Update the Typography's variant prop options
+declare module '@mui/material/Typography' {
+  interface TypographyPropsVariantOverrides {
+    sender: true;
+    h3: false;
+  }
 }
 
 export const theme = createTheme({
@@ -28,15 +39,31 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: ['Inter', 'Arial', 'sans-serif'].join(','),
+    fontFamily: ['Play', 'Inter', 'Arial', 'sans-serif'].join(','),
     h1: {
       fontSize: 32,
       color: '#f9ceff',
       fontWeight: 800,
     },
+    h2: {
+      textAlign: 'center',
+      fontWeight: 400,
+      fontSize: '1.375rem',
+      lineHeight: '1.5625rem',
+    },
+    body1: {
+      fontWeight: 400,
+      fontSize: '0.875rem',
+      lineHeight: '1.125rem',
+    },
     caption: {
       fontWeight: 600,
       fontSize: '1rem',
+      lineHeight: '1.5em',
+    },
+    sender: {
+      fontWeight: 400,
+      fontSize: '0.75rem',
       lineHeight: '1.5em',
     },
     button: {
@@ -116,11 +143,15 @@ export const theme = createTheme({
         },
       },
     },
-    MuiDialog: {
+    MuiButton: {
       styleOverrides: {
-        paper: {
-          backgroundColor: '#f9ceff',
-          border: '10px solid rgb(135, 31, 120, 0.5)',
+        root: {
+          backgroundColor: '#fbcd56',
+          color: 'black',
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          minWidth: '200px',
+          height: '3rem',
         },
       },
     },

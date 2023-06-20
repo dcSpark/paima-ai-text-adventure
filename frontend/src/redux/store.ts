@@ -12,6 +12,7 @@ interface AppState {
   lobbyNfts: LobbyNFTs | null;
   selectedNft: string | null;
   joinedLobby: string | null;
+  buyModal: boolean;
 }
 
 const initialState: AppState = {
@@ -20,6 +21,7 @@ const initialState: AppState = {
   selectedNft: null,
   joinedLobby: null,
   lobbyNfts: null,
+  buyModal: false,
 };
 
 const appSlice = createSlice({
@@ -41,11 +43,20 @@ const appSlice = createSlice({
     setLobbyNfts: (state, action: PayloadAction<LobbyNFTs>) => {
       state.lobbyNfts = action.payload;
     },
+    setBuyModal: (state, action: PayloadAction<boolean>) => {
+      state.buyModal = action.payload;
+    },
   },
 });
 
-export const { setConnected, setUserWallet, setSelectedNft, setJoinedLobby, setLobbyNfts } =
-  appSlice.actions;
+export const {
+  setConnected,
+  setUserWallet,
+  setSelectedNft,
+  setJoinedLobby,
+  setLobbyNfts,
+  setBuyModal,
+} = appSlice.actions;
 
 const reducer = {
   app: appSlice.reducer,
