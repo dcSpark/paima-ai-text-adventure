@@ -22,7 +22,8 @@ $$;
 CREATE TABLE lobbies (
     open boolean NOT NULL,
     lobby_description text,
-    lobby_id text PRIMARY KEY
+    lobby_id text PRIMARY KEY,
+    created_by text NOT NULL
 );
 
 --
@@ -65,6 +66,6 @@ CREATE TABLE match_moves (
 CREATE TRIGGER increment_move_number_trigger BEFORE INSERT ON match_moves FOR EACH ROW EXECUTE FUNCTION increment_move_number();
 
 -- Creates the initial lobby
-BEGIN;
-  INSERT INTO lobbies (open, lobby_description, lobby_id) VALUES (TRUE, 'The First Kingdom', '1');
-COMMIT;
+-- BEGIN;
+  -- INSERT INTO lobbies (open, lobby_description, lobby_id) VALUES (TRUE, 'The First Kingdom', '1');
+-- COMMIT;

@@ -9,6 +9,8 @@ import {
 } from '../errors';
 import { buildMatchExecutor, buildRoundExecutor } from '../helpers/executors';
 import {
+  backendQueryGetEmptyLobbyForWallet,
+  backendQueryGetLobbies,
   backendQueryLobbyMessages,
   backendQueryMatchExecutor,
   backendQueryNftsForLobby,
@@ -130,6 +132,50 @@ async function getMatchExecutor(
 //   }
 // }
 
+async function getMyLobbies(): Promise<any | FailedResult> {
+  const errorFxn = buildEndpointErrorFxn('getMyLobbies');
+
+  let res: Response;
+  try {
+    const query = backendQueryGetLobbies();
+    res = await fetch(query);
+  } catch (err) {
+    return errorFxn(PaimaMiddlewareErrorCode.ERROR_QUERYING_BACKEND_ENDPOINT, err);
+  }
+
+  try {
+    const lobbies = (await res.json()) as any;
+    return {
+      success: true,
+      lobbies,
+    };
+  } catch (err) {
+    return errorFxn(PaimaMiddlewareErrorCode.INVALID_RESPONSE_FROM_BACKEND, err);
+  }
+}
+
+export async function getEmptyLobby(walletId: string): Promise<any | FailedResult> {
+  const errorFxn = buildEndpointErrorFxn('getEmptyLobby');
+
+  let res: Response;
+  try {
+    const query = backendQueryGetEmptyLobbyForWallet(walletId);
+    res = await fetch(query);
+  } catch (err) {
+    return errorFxn(PaimaMiddlewareErrorCode.ERROR_QUERYING_BACKEND_ENDPOINT, err);
+  }
+
+  try {
+    const lobby = (await res.json()) as any;
+    return {
+      success: true,
+      lobby,
+    };
+  } catch (err) {
+    return errorFxn(PaimaMiddlewareErrorCode.INVALID_RESPONSE_FROM_BACKEND, err);
+  }
+}
+
 // todo; add some pagination
 async function getLobbyMoves(lobbyId: string): Promise<PackedLobbyMoves | FailedResult> {
   const errorFxn = buildEndpointErrorFxn('getLobbyMoves');
@@ -203,4 +249,6 @@ export const queryEndpoints = {
   getLobbyMoves,
   getNftsForLobby,
   getNftsForWallet,
+  getMyLobbies,
+  getEmptyLobby,
 };

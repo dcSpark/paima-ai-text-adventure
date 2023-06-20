@@ -4,7 +4,7 @@ import parse from './parser.js';
 import type Prando from 'paima-sdk/paima-prando';
 import type { SubmittedChainData } from 'paima-sdk/paima-utils';
 import type { SQLUpdate } from 'paima-sdk/paima-db';
-import { submitMove, joinNftToLobbyId, scheduledData } from './persist/global.js';
+import { submitMove, joinNftToLobbyId, scheduledData, createNewLobby } from './persist/global.js';
 
 export default async function (
   inputData: SubmittedChainData,
@@ -20,11 +20,11 @@ export default async function (
       return submitMove(user, blockHeight, input, dbConn, randomnessGenerator);
     case 'joinNftToLobby':
       return joinNftToLobbyId(user, blockHeight, input, dbConn, randomnessGenerator);
-
     case 'scheduledData':
       if (!inputData.scheduled) return [];
       return scheduledData(input, user);
-
+    case 'createLobby':
+      return createNewLobby(user, blockHeight, input, dbConn, randomnessGenerator);
     default:
       return [];
   }

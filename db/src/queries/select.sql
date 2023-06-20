@@ -48,6 +48,15 @@ WHERE nft_id IN (
     WHERE nft_owner = :owner!
 );
 
+/* @name getLobbySamples */
+SELECT lobbies.lobby_id
+FROM lobbies
+  INNER JOIN nft_state 
+    ON lobbies.lobby_id = nft_state.lobby_id
+GROUP BY lobbies.lobby_id
+HAVING COUNT(nft_state.nft_id) < 3
+LIMIT 5;
+
 /* @name getAllOwnedNFTStates */
 SELECT *
 FROM nft_state

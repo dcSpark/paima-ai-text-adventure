@@ -258,6 +258,37 @@ const getNftStateForOwnerIR: any = {"usedParamSet":{"owner":true},"params":[{"na
 export const getNftStateForOwner = new PreparedQuery<IGetNftStateForOwnerParams,IGetNftStateForOwnerResult>(getNftStateForOwnerIR);
 
 
+/** 'GetLobbySamples' parameters type */
+export type IGetLobbySamplesParams = void;
+
+/** 'GetLobbySamples' return type */
+export interface IGetLobbySamplesResult {
+  lobby_id: string;
+}
+
+/** 'GetLobbySamples' query type */
+export interface IGetLobbySamplesQuery {
+  params: IGetLobbySamplesParams;
+  result: IGetLobbySamplesResult;
+}
+
+const getLobbySamplesIR: any = {"usedParamSet":{},"params":[],"statement":"SELECT lobbies.lobby_id\nFROM lobbies\n  INNER JOIN nft_state \n    ON lobbies.lobby_id = nft_state.lobby_id\nGROUP BY lobbies.lobby_id\nHAVING COUNT(nft_state.nft_id) < 3\nLIMIT 5"};
+
+/**
+ * Query generated from SQL:
+ * ```
+ * SELECT lobbies.lobby_id
+ * FROM lobbies
+ *   INNER JOIN nft_state 
+ *     ON lobbies.lobby_id = nft_state.lobby_id
+ * GROUP BY lobbies.lobby_id
+ * HAVING COUNT(nft_state.nft_id) < 3
+ * LIMIT 5
+ * ```
+ */
+export const getLobbySamples = new PreparedQuery<IGetLobbySamplesParams,IGetLobbySamplesResult>(getLobbySamplesIR);
+
+
 /** 'GetAllOwnedNftStates' parameters type */
 export interface IGetAllOwnedNftStatesParams {
   contract_address: string | null | void;

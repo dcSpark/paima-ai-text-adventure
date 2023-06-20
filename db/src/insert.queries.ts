@@ -113,3 +113,40 @@ const addOracleMoveIR: any = {"usedParamSet":{"lobby_id":true,"move_entry":true}
 export const addOracleMove = new PreparedQuery<IAddOracleMoveParams,IAddOracleMoveResult>(addOracleMoveIR);
 
 
+/** 'CreateLobby' parameters type */
+export interface ICreateLobbyParams {
+  created_by: string;
+  lobby_description: string;
+  lobby_id: string;
+}
+
+/** 'CreateLobby' return type */
+export type ICreateLobbyResult = void;
+
+/** 'CreateLobby' query type */
+export interface ICreateLobbyQuery {
+  params: ICreateLobbyParams;
+  result: ICreateLobbyResult;
+}
+
+const createLobbyIR: any = {"usedParamSet":{"lobby_description":true,"lobby_id":true,"created_by":true},"params":[{"name":"lobby_description","required":true,"transform":{"type":"scalar"},"locs":[{"a":97,"b":115}]},{"name":"lobby_id","required":true,"transform":{"type":"scalar"},"locs":[{"a":120,"b":129}]},{"name":"created_by","required":true,"transform":{"type":"scalar"},"locs":[{"a":134,"b":145}]}],"statement":"INSERT INTO lobbies (\n  open,\n  lobby_description,\n  lobby_id,\n  created_by\n) VALUES (\n  TRUE,\n  :lobby_description!,\n  :lobby_id!,\n  :created_by!\n)"};
+
+/**
+ * Query generated from SQL:
+ * ```
+ * INSERT INTO lobbies (
+ *   open,
+ *   lobby_description,
+ *   lobby_id,
+ *   created_by
+ * ) VALUES (
+ *   TRUE,
+ *   :lobby_description!,
+ *   :lobby_id!,
+ *   :created_by!
+ * )
+ * ```
+ */
+export const createLobby = new PreparedQuery<ICreateLobbyParams,ICreateLobbyResult>(createLobbyIR);
+
+

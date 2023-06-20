@@ -4,4 +4,5 @@ export const ROUTES = {
   NO_NFT: '/no_nft',
   LOBBY: '/lobby',
   BUY: '/buy',
+  SELECT_LOBBY: '/select_lobby',
 };

@@ -300,6 +300,7 @@ export function Lobby(): React.JSX.Element {
                         cdeName: NFT_CDE,
                         wallet: userWallet.walletAddress,
                       });
+                      setMessage('');
                     }}
                   >
                     <Send />

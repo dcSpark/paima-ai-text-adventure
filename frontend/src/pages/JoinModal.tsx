@@ -23,14 +23,14 @@ import { skipToken } from '@reduxjs/toolkit/dist/query';
 import { rtkApi } from '@src/redux/rtkQuery/rootApi';
 import { NFT_CDE } from '@game/utils';
 
-const lobbyToJoin = '1'; // TODO magic constant
-
 export function JoinModal() {
   const theme = useTheme();
   const dispatch: typeof store['dispatch'] = useAppDispatch();
   const selectedNftId = useSelector((state: RootState) => state.app.selectedNft);
   const userWallet = useSelector((state: RootState) => state.app.userWallet);
   const joinedLobby = useSelector((state: RootState) => state.app.joinedLobby);
+  const [selectedLobby, setSelectedLobby] = useState('');
+
   const [showDescriptionPrompt, setShowDescriptionPrompt] = useState(false);
   const [descriptionInput, setDescriptionInput] = useState('');
   const { data: userNFTs } = rtkApi.nft.endpoints.getNFTsForWallet.useQuery(
@@ -38,6 +38,14 @@ export function JoinModal() {
     { pollingInterval: 5_000 }
   );
   const open = joinedLobby == null && userNFTs != null && userNFTs.length !== 0;
+
+  const selectedNft =
+    userNFTs == null ? undefined : userNFTs.find(nft => nft.nft_id === selectedNftId);
+  const lobbyToJoin = selectedNft?.lobby_id ?? selectedLobby ?? undefined;
+
+  const { data: userLobbies } = rtkApi.lobby.endpoints.getLobbies.useQuery(undefined, {
+    pollingInterval: 10_000,
+  });
 
   useEffect(() => {
     // assert: an nft is selected after load
@@ -75,11 +83,15 @@ export function JoinModal() {
     if (joinResult.success) {
       dispatch(setJoinedLobby(lobbyToJoin));
     }
-  }, [descriptionInput, dispatch, selectedNftId]);
+  }, [descriptionInput, dispatch, lobbyToJoin, selectedNftId]);
 
-  console.log('HELLO', showDescriptionPrompt);
+  const createLobby = async () => {
+    await mw.createLobby(selectedNftId);
+  };
 
-  if (userNFTs == null || userNFTs.length === 0) return <Box />;
+  console.log('HELLO lobbies', userLobbies);
+
+  if (userNFTs == null || userNFTs.length === 0 || userLobbies == null) return <Box />;
 
   return (
     <Dialog
@@ -120,12 +132,33 @@ export function JoinModal() {
           ))}
         </Select>
         <Box minHeight={theme.spacing(2)} />
-        <Button fullWidth variant="contained" onClick={handleJoin}>
+        <Button fullWidth variant="contained" onClick={handleJoin} disabled={lobbyToJoin == null}>
           Join
         </Button>
         <Box minHeight={theme.spacing(1)} />
         <Button fullWidth onClick={() => dispatch(setBuyModal(true))}>
           Buy
+        </Button>
+        <Box minHeight={theme.spacing(2)} />
+        <Select
+          disabled={selectedNft?.lobby_id != null}
+          sx={{
+            width: '200px',
+          }}
+          value={selectedLobby || lobbyToJoin || ''}
+          onChange={event => {
+            setSelectedLobby(event.target.value);
+          }}
+        >
+          {userLobbies.map(lobby => (
+            <MenuItem key={lobby.id} value={lobby.id}>
+              {lobby.id}
+            </MenuItem>
+          ))}
+        </Select>
+        <Box minHeight={theme.spacing(1)} />
+        <Button disabled={selectedNft?.lobby_id != null} fullWidth onClick={createLobby}>
+          Create New Lobby
         </Button>
         <Dialog
           open={showDescriptionPrompt}

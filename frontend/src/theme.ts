@@ -155,5 +155,14 @@ export const theme = createTheme({
         },
       },
     },
+    MuiCssBaseline: {
+      styleOverrides: {
+        '.Mui-disabled': {
+          opacity: '0.7 !important',
+          color: '#ffffff !important',
+          '-webkit-text-fill-color': '#ffffff !important',
+        },
+      },
+    },
   },
 });

@@ -73,5 +73,11 @@ export const lobbyApi = createApi({
       },
       providesTags: [Tags.characterImages],
     }),
+    getLobbies: builder.query<{ id: string }[], void>({
+      queryFn: async () => {
+        const myLobbies = await mw.getMyLobbies();
+        return { data: myLobbies.lobbies };
+      },
+    }),
   }),
 });

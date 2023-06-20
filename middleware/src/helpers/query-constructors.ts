@@ -1,5 +1,4 @@
 import type { WalletAddress } from 'paima-sdk/paima-utils';
-import type { QueryOptions } from 'paima-sdk/paima-mw-core';
 import { buildBackendQuery } from 'paima-sdk/paima-mw-core';
 
 export function backendQueryUserStats(wallet: WalletAddress): string {
@@ -39,6 +38,19 @@ export function backendQueryLobbyMessages(lobby_id: string): string {
     lobby_id,
   };
   return buildBackendQuery(endpoint, options);
+}
+
+export function backendQueryGetEmptyLobbyForWallet(wallet: string): string {
+  const endpoint = 'lobbies/empty';
+  const options = {
+    wallet,
+  };
+  return buildBackendQuery(endpoint, options);
+}
+
+export function backendQueryGetLobbies(): string {
+  const endpoint = 'lobbies';
+  return buildBackendQuery(endpoint, {});
 }
 
 export function backendQueryNftsForLobby(lobby_id: string): string {

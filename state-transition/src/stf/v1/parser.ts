@@ -8,6 +8,7 @@ const myGrammar = `
         joinNftToLobby  = join|data
         submitMove      = move|data
         nftMint         = nftmint|address|tokenId
+        createLobby     = c|nft_id
 `;
 
 const base64Parser = () => PaimaParser.RegexParser(/^[A-Za-z0-9+/=]+$/);
@@ -27,6 +28,9 @@ const parserCommands = {
     data: base64Parser(),
   },
   nftMint,
+  createLobby: {
+    nft_id: PaimaParser.NCharsParser(1, 100), // todo: make into data
+  },
 };
 
 const myParser = new PaimaParser(myGrammar, parserCommands);

@@ -8,6 +8,7 @@ import type {
   IUpdateNftStateParams,
   ICreateNftStateParams,
   IGetMessageHistoryForLobbyResult,
+  ICreateLobbyParams,
 } from '@game/db';
 import {
   createNftState,
@@ -18,6 +19,7 @@ import {
   getNftState,
   getMessageHistoryForLobby,
   getNftsForLobby,
+  createLobby,
 } from '@game/db';
 import { CDE_CONTRACT_MAPPING, NFT_CDE, ORACLE_AI } from '@game/utils';
 import type { Pool } from 'pg';
@@ -28,8 +30,33 @@ import type {
   NftMintInput,
   ScheduledDataInput,
   SubmitMoveInput,
+  CreateLobbyInput,
 } from '@game/utils/src/onChainTypes';
 import axios from 'axios';
+
+export async function createNewLobby(
+  player: WalletAddress,
+  blockHeight: number,
+  inputData: CreateLobbyInput,
+  dbConn: Pool,
+  randomnessGenerator: Prando
+): Promise<SQLUpdate[]> {
+  const lobby_id = randomnessGenerator.nextString();
+  const createLobbyParams: ICreateLobbyParams = {
+    lobby_description: '',
+    lobby_id,
+    created_by: player,
+  };
+  const joinLobbyParams: IJoinNftToLobbyParams = {
+    lobby_id,
+    contract_address: CDE_CONTRACT_MAPPING[NFT_CDE],
+    nft_id: inputData.nft_id,
+  };
+  return [
+    [createLobby, createLobbyParams],
+    [joinNftToLobby, joinLobbyParams],
+  ];
+}
 
 export async function joinNftToLobbyId(
   player: WalletAddress,

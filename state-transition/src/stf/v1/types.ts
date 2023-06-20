@@ -1,4 +1,5 @@
 import type {
+  CreateLobbyInput,
   JoinNftToLobbyInput,
   NftMintInput,
   SubmitMoveInput,
@@ -8,7 +9,9 @@ export type ParsedSubmittedInput =
   | InvalidInput
   | SubmitMoveInput
   | JoinNftToLobbyInput
-  | NftMintInput;
+  | NftMintInput
+  | CreateLobbyInput;
+
 export interface InvalidInput {
   input: 'invalidString';
 }

@@ -1,9 +1,9 @@
 import { builder } from 'paima-sdk/paima-concise';
 import type { OldResult } from 'paima-sdk/paima-mw-core';
-import { postConciseData } from 'paima-sdk/paima-mw-core';
-
+import { getActiveAddress, postConciseData } from 'paima-sdk/paima-mw-core';
 import { buildEndpointErrorFxn, PaimaMiddlewareErrorCode } from '../errors';
 import type { SubmitMoveInput, JoinNftToLobbyInput } from '@game/utils/src/onChainTypes';
+import { getEmptyLobby } from './queries';
 
 async function submitMoves(input: Omit<SubmitMoveInput, 'input'>): Promise<OldResult> {
   const errorFxn = buildEndpointErrorFxn('submitMoves');
@@ -58,7 +58,34 @@ async function joinNftToLobby(input: Omit<JoinNftToLobbyInput, 'input'>): Promis
   }
 }
 
+async function createLobby(nftId: string): Promise<any> {
+  const errorFxn = buildEndpointErrorFxn('createLobby');
+  const userWalletAddress = getActiveAddress();
+
+  const conciseBuilder = builder.initialize();
+  conciseBuilder.setPrefix('c');
+  conciseBuilder.addValue({ value: nftId });
+
+  try {
+    const result = await postConciseData(conciseBuilder.build(), errorFxn);
+    if (result.success) {
+      for (let retries = 0; retries < 5; retries++) {
+        const lobby = await getEmptyLobby(userWalletAddress);
+        if (lobby) return { success: true, lobby: lobby.lobby };
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      return { success: true, lobby: null };
+    } else {
+      return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN);
+    }
+  } catch (err) {
+    return errorFxn(PaimaMiddlewareErrorCode.ERROR_POSTING_TO_CHAIN, err);
+  }
+}
+
 export const writeEndpoints = {
   submitMoves,
   joinNftToLobby,
+  createLobby,
 };

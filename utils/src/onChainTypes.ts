@@ -28,3 +28,8 @@ export interface NftMintInput extends ScheduledDataInput {
   // contract address
   address: WalletAddress;
 }
+
+export interface CreateLobbyInput {
+  input: 'createLobby';
+  nft_id: string;
+}

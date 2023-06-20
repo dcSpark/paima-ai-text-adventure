@@ -44,3 +44,18 @@ INSERT INTO match_moves (
   :move_entry!,
   TRUE
 );
+
+/*
+  @name create_lobby
+*/
+INSERT INTO lobbies (
+  open,
+  lobby_description,
+  lobby_id,
+  created_by
+) VALUES (
+  TRUE,
+  :lobby_description!,
+  :lobby_id!,
+  :created_by!
+);
