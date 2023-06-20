@@ -85,7 +85,7 @@ function formatChatHistory(req: {
     .map(entry => `${entry.nft_id ?? req.oracleName}: [${entry.move_entry}]`)
     .join('\n');
 
-  const maxChars = 2000;
+  const maxChars = 1900;
 
   if (result.length > maxChars) {
     // Cut the text from the beginning, to ensure the end part remains
@@ -153,7 +153,7 @@ export async function submitMove(
     'Here is a chat message between multiple participants:',
     chatHistory,
     `
-    This is a conversation between players and a game master. The game master (${oracleName}) make the players act like they are in a fantasy RPG world. Every player is referred to by a number. Every message is inside square brackets. Generate the next response from the ${oracleName}. Give a slight higher weight to recent messages. Important: also summarize the state of the world.
+    This is a conversation between players and a game master. The game master (${oracleName}) make the players act like they are in a fantasy RPG world. Every player is referred to by a number. Generate the next response from the ${oracleName}. Give a slight higher weight to recent messages.
     `,
   ].join('\n');
   const oracleAiResponse = await axios.post(
@@ -178,12 +178,12 @@ export async function submitMove(
 
   for (const nft of lobbyNfts) {
     const descriptionPrompt = [
-      'Brief description of ' + nft.nft_id,
+      'Brief description of player ' + nft.nft_id,
       `${nft.nft_id}: ${nft.nft_description}`,
       'Here is a chat message between multiple participants:',
       chatHistory,
       ` `,
-      `Tell me the top 4 most important things about ${nft.nft_id} -- be brief. This will be used for a text-to-image AI like DALL-E.`,
+      `Tell me the top 4 most important things about player ${nft.nft_id} -- be brief. This will be used for a text-to-image AI like DALL-E.`,
     ].join('\n');
 
     const descriptionAiResponse = await axios.post(
