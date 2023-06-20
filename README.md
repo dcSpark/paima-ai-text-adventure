@@ -1,4 +1,4 @@
-# OpenWorld Game Node Template
+# Paima AI Text Adventure (デモビデオは[こちら](https://youtu.be/ijc-6RjJibc)）
 
 Following is a basic overview of useful commands and project structure. Each module has it's own README file with more detailed information.
 
